@@ -29,7 +29,6 @@ class Grid:
         # create a 2d grid of all combinations
         self.mesh_x, self.mesh_y = np.meshgrid(self.cell_x, self.cell_y)
     
-
     @property
     def grid_shape(self) -> tuple[int, int]:
         """
@@ -45,6 +44,23 @@ class Grid:
         return (self.grid_x_length, self.grid_y_length)
 
     @property
-    def grid_centres(self):
-        return self.mesh_x, self.mesh_y
+    def grid_centres(self) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Returns a mesh showing centre of each cell region.
+        """
+        return (self.mesh_x, self.mesh_y)
+    
+    @property
+    def grid_ones(self) -> np.ndarray:
+        """
+        Does not mutate original, creates a new copy of matrix with same dimensions filled with 1s
+        """
+        return np.ones(self.grid_shape)
+    
+    @property
+    def grid_zeros(self) -> np.ndarray:
+        """
+        Does not mutate original, creates a new copy of matrix with same dimensions filled with 0s
+        """
+        return np.zeros(self.grid_shape)
     
