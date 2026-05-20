@@ -28,3 +28,23 @@ class Grid:
 
         # create a 2d grid of all combinations
         self.mesh_x, self.mesh_y = np.meshgrid(self.cell_x, self.cell_y)
+    
+
+    @property
+    def grid_shape(self) -> tuple[int, int]:
+        """
+        Returns row x column matrix size of grid
+        """
+        return (self.number_of_rows, self.number_of_columns)
+
+    @property
+    def grid_length(self) -> tuple[float, float]:
+        """
+        Returns length of x and y of grid
+        """
+        return (self.grid_x_length, self.grid_y_length)
+
+    @property
+    def grid_centres(self):
+        return self.mesh_x, self.mesh_y
+    
