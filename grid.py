@@ -3,15 +3,40 @@ import numpy as np
 class Grid:
     def __init__(self, number_of_columns: int, number_of_rows: int, grid_x_length: float = 1.0, grid_y_length: float = 1.0):
         """
-        Navier Stokes describes a fluid at every point in space, hence being continuous
-        Instead, we find average velocity and pressure in each region of grid
-        Hence, we split the grid into regions 
+        Navier Stokes equations describe fluid motion using continuous fluids for velocity and pressure
+        We discretise the fluid domain into grid cells, and approximate the centre of these fields
+
+        # ∇·u = 0 assumed
+            # Describing a velocity field u where fluid is incompressible
+            # ∂ρ/∂t + ∇·(uρ) is reduced given constant density. Local volume is conserved
+        
+        # ρ(DV->)/Dt = -∇p + ρ(g)-> + μ∇^2(V)->
+            # where: 
+                # ρ(DV->)/Dt = ρ[∂V/∂t + (V·∇)V] is)], the inertia of the fluid
+                # -∇p describes the fluid flowing in direction of largest change in pressure
+                # ρ(g)-> is the hydrostatic weight density, describing external forces acting on the fluid (gravitational or electromagnetic)
+                # μ∇^2(V)-> is the diffusion term, where for a Newtonian fluid, viscosity operates as a diffusion of momentum. Viscous friction
+        
+        # Substituting:
+            # ρ[∂V/∂t + (V·∇)V] = -∇p + ρ(g)-> + μ∇^2(V)->
+        # Rearranging:
+            # ∂V/∂t = -(V·∇)V - ∇p/ρ + g-> + (μ/ρ)∇^2(V)->
+        # Since v = μ/ρ:
+            # ∂V/∂t = -(V·∇)V - ∇p/ρ + g-> + (v)∇^2(V)->
+        
+        # Which is the equation we shall use
         
         Args:
             number_of_columns (int): Number of columns in our grid
             number_of_rows (int): Number of rows in our grid
             grid_x_length (float): Total length of x for grid
             grid_y_length (float): Total length of y for grid
+        
+        TODO: 
+            operators:
+                gradient: pressure force on fluid to describe -∇p/ρ
+                laplacian: viscous diffusion of momentum to dexcribe (v)∇^2(V)->
+                divergence: Incompressibility condition to describe ∇·u = 0
         """
 
         self.number_of_columns = number_of_columns
@@ -99,7 +124,7 @@ class Grid:
             return
         raise ValueError(f"Please enter coordinates between 0 and {self.number_of_rows-1} inclusive for i and between 0 and {self.number_of_columns-1} inclusive for j")
     
-    def _central_difference(self, i: int, j: int, step_size: int):
+    def central_difference(self, i: int, j: int, step_size: int):
         #Returns central difference to approximate the derivative of function, by sampling values on both sides of point 
         # step_size = self.cell_x_length
         #derivative: float = f(x+h) - f(x-h) / (2 * step_size)
