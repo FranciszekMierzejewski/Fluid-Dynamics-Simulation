@@ -12,7 +12,7 @@ class Grid:
         
         # ρ(DV->)/Dt = -∇p + ρ(g)-> + μ∇^2(V)->
             # where: 
-                # ρ(DV->)/Dt = ρ[∂V/∂t + (V·∇)V] is)], the inertia of the fluid
+                # ρ(DV->)/Dt = ρ[∂V/∂t + (V·∇)V])], is the inertia of the fluid
                 # -∇p describes the fluid flowing in direction of largest change in pressure
                 # ρ(g)-> is the hydrostatic weight density, describing external forces acting on the fluid (gravitational or electromagnetic)
                 # μ∇^2(V)-> is the diffusion term, where for a Newtonian fluid, viscosity operates as a diffusion of momentum. Viscous friction
@@ -34,9 +34,7 @@ class Grid:
         
         TODO: 
             operators:
-                gradient: pressure force on fluid to describe -∇p/ρ
                 laplacian: viscous diffusion of momentum to dexcribe (v)∇^2(V)->
-                divergence: Incompressibility condition to describe ∇·u = 0
         """
 
         self.number_of_columns = number_of_columns
@@ -54,8 +52,7 @@ class Grid:
         # create a 2d grid of all combinations
         self.mesh_x, self.mesh_y = np.meshgrid(self.cell_x, self.cell_y)
 
-        self.centre_values: dict[list[float], float] = {} 
-
+        self.centre_values: np.ndarray = self.grid_zeros()
     
     @property
     def grid_shape(self) -> tuple[int, int]:
@@ -112,21 +109,62 @@ class Grid:
 
     def get_value(self, i:int, j:int) -> float:
         if self.boundary_cell_check(i, j):
-            key = self.get_cell_centre(i,j)
-            if key in self.centre_values:
-                return self.centre_values[key]
-            raise KeyError(f"No such key present in dictionary")
+            return float(self.centre_values[i, j])
         raise ValueError(f"Please enter coordinates between 0 and {self.number_of_rows-1} inclusive for i and between 0 and {self.number_of_columns-1} inclusive for j")
     
     def set_value(self, i:int, j:int, value: float) -> None:
         if self.boundary_cell_check(i, j):
-            self.centre_values[self.get_cell_centre(i,j)] = value
+            self.centre_values[i, j] = value
             return
         raise ValueError(f"Please enter coordinates between 0 and {self.number_of_rows-1} inclusive for i and between 0 and {self.number_of_columns-1} inclusive for j")
     
-    def central_difference(self, i: int, j: int, step_size: int):
-        #Returns central difference to approximate the derivative of function, by sampling values on both sides of point 
-        # step_size = self.cell_x_length
-        #derivative: float = f(x+h) - f(x-h) / (2 * step_size)
-        pass
+    def central_difference_x(self, f: np.ndarray) -> np.ndarray:
+        """
+        Returns central difference to approximate the derivative of function, by sampling values on both sides of point 
 
+        # ∇ · F ~~ (u[i+1,j] - u[i-1,j])/(2*dx) + (v[i,j+1] - v[i,j-1])/(2*dy) : 2nd order  
+        # f'(x) ~~ (f(x-2h) - 8f(x-h) + 8f(x+h) - f(x+2h)) / (12h) : 4th order  
+        """
+
+        difference_grid_x: np.ndarray = self.grid_zeros()
+        dx: float = self.cell_x_length
+ 
+        difference_grid_x[:,2:-2] = (f[:,:-4] - 8*f[:,1:-3] + 8*f[:,3:-1] - f[:,4:]) / (12 * dx) # all rows, third column to third to last column
+        difference_grid_x[:,1] = (f[:,2] - f[:,0]) / (2 * dx) # all rows, second column
+        difference_grid_x[:,-2] = (f[:,-1] - f[:,-3]) / (2 * dx) # all rows, second to last column
+
+        return difference_grid_x
+    
+    def central_difference_y(self, f: np.ndarray) -> np.ndarray:
+        difference_grid_y: np.ndarray = self.grid_zeros()
+        dy: float = self.cell_y_length
+
+        difference_grid_y[2:-2,:] = (f[:-4,:] - 8*f[1:-3,:] + 8*f[3:-1,:] - f[4:,:]) / (12 * dy) # third row to third to last row, all columns
+        difference_grid_y[1,:] = (f[2,:] - f[0,:]) / (2 * dy) # second row, all columns
+        difference_grid_y[-2,:] = (f[-1,:] - f[-3,:]) / (2 * dy) # second to last row, all columns
+
+        return difference_grid_y
+ 
+    def gradient(self, f: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        return self.central_difference_x(f), self.central_difference_y(f)
+
+    def divergence(self, u: np.ndarray, v: np.ndarray) -> np.ndarray:
+        """
+        ∇·F = ∂u/∂x + ∂v/∂y
+        """
+        return self.central_difference_x(u) + self.central_difference_y(v) 
+
+
+# Forward difference on left boundary, backward difference on right boundary, central difference in middle
+# for a vector field F = (u,v) in 2D on a uniform cartesian grid, divergence is:
+# ∇ · F ~~ (u[i+1,j] - u[i-1,j])/(2*dx) + (v[i,j+1] - v[i,j-1])/(2*dy)
+# accurate at second order 
+
+# for fourth order accuracy:
+# f'(x) ~~ (f(x-2h) - 8f(x-h) + 8f(x+h) - f(x+2h)) / (12h)
+
+# forward difference, second order accurate:
+# f'(x) ~~ (-3f(x1) + 4f(x2) - f(x3)) / (2h)
+
+# backward difference:
+# f'(x) ~~ (3f(xn) - 4f(xn-1) + f(xn-2)) / (2h)
