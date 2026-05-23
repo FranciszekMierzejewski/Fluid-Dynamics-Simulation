@@ -146,22 +146,27 @@ class Grid:
         return difference_grid_y
  
     def gradient(self, f: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Points in direction of greatest change of function, describing pressure forces on fluid
+        """
         return self.central_difference_x(f), self.central_difference_y(f)
 
     def divergence(self, u: np.ndarray, v: np.ndarray) -> np.ndarray:
         """
+        Measures how much a fluid spreads out from a point, describing the incompressibility condition of the fluid
+        In our case, we want incompressible flow, so the divergence should be 0 everywhere
         ∇·F = ∂u/∂x + ∂v/∂y
         """
         return self.central_difference_x(u) + self.central_difference_y(v) 
 
+    def laplacian(self, u: np.ndarray) -> np.ndarray:
+        """
+        How much a value differs from its neighbours on average, describing momentum diffusion in our fluid
+        ∇^2u = ∂^2u/∂x^2 + ∂^2u/∂y^2
+        """
+        return self.central_difference_x(self.central_difference_x(u)) + self.central_difference_y(self.central_difference_y(u))
 
-# Forward difference on left boundary, backward difference on right boundary, central difference in middle
-# for a vector field F = (u,v) in 2D on a uniform cartesian grid, divergence is:
-# ∇ · F ~~ (u[i+1,j] - u[i-1,j])/(2*dx) + (v[i,j+1] - v[i,j-1])/(2*dy)
-# accurate at second order 
 
-# for fourth order accuracy:
-# f'(x) ~~ (f(x-2h) - 8f(x-h) + 8f(x+h) - f(x+2h)) / (12h)
 
 # forward difference, second order accurate:
 # f'(x) ~~ (-3f(x1) + 4f(x2) - f(x3)) / (2h)
