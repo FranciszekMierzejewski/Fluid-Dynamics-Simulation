@@ -19,13 +19,13 @@ def main():
         # Testing f = y^2, therefore expected ∂f/∂y = 2y
     
     f = grid.mesh_x ** 2
-    df_dx = grid.central_difference_x(f)
+    df_dx = grid.first_diff_x_central_difference(f)
     expected_df_dx = 2 * grid.mesh_x
     error_x = np.max(np.abs(df_dx[2:-2,2:-2] - expected_df_dx[2:-2,2:-2]))
     print(f"Maximum error in centre regions: {error_x:.6f}")
 
     f = grid.mesh_y ** 2
-    df_dy = grid.central_difference_y(f)
+    df_dy = grid.first_diff_y_central_difference(f)
     expected_df_dy = 2 * grid.mesh_y
     error_y = np.max(np.abs(df_dy[2:-2,2:-2] - expected_df_dy[2:-2,2:-2]))
     print(f"Maximum error in centre regions: {error_y:.6f}")

@@ -148,6 +148,20 @@ class Grid:
     def second_diff_x_central_difference(self, f: np.ndarray) -> np.ndarray:
         """
         f''(x) ~~ (-f(x-2h) + 16f(x-h) - 30f(x) + 16f(x+h) - f(x+2h)) / (12h²) : 4th order 
+
+        Indiscrete version: 
+            f''i(x) ~~ (-fi-2 + 16fi-1 - 30fi + 16fi+1 - fi+2) / (12(h)^2)
+        So for an array with n columns, interior indices where a 5 point stencil fits are:
+            i = 2, 3, ..., n-3
+        Therefore:
+            difference_grid_x[:, 2:-2]
+        So with 10 columns:
+            f[:,:-4] = columns 0..5
+            f[:,1:-3] = columns 1..6
+            f[:,2:-2] = columns 2..7
+            f[:,3:-1] = columns 3..8
+            f[:,4:] = columns 4..9
+            So x[:, 2:-2] = columns 2..7
         """
         difference_grid_x: np.ndarray = self.grid_zeros()
         dx_squared: float = self.cell_x_length ** 2
