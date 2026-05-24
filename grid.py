@@ -31,12 +31,12 @@ class Grid:
             number_of_rows (int): Number of rows in our grid
             grid_x_length (float): Total length of x for grid
             grid_y_length (float): Total length of y for grid
-        
-        TODO: 
-            operators:
-                laplacian: viscous diffusion of momentum to dexcribe (v)∇^2(V)->
         """
 
+        if number_of_columns < 5 or number_of_rows < 5:
+            raise ValueError("Must be at least 5 columns and 5 rows for grid")
+            # f(x-2h), f(x-h), f(x), f(x+h), f(x+2h) for 4th order central difference
+        
         self.number_of_columns = number_of_columns
         self.number_of_rows = number_of_rows
         self.grid_x_length = grid_x_length
@@ -118,7 +118,7 @@ class Grid:
             return
         raise ValueError(f"Please enter coordinates between 0 and {self.number_of_rows-1} inclusive for i and between 0 and {self.number_of_columns-1} inclusive for j")
     
-    def central_difference_x(self, f: np.ndarray) -> np.ndarray:
+    def first_diff_x_central_difference(self, f: np.ndarray) -> np.ndarray:
         """
         Returns central difference to approximate the derivative of function, by sampling values on both sides of point 
 
@@ -135,7 +135,7 @@ class Grid:
 
         return difference_grid_x
     
-    def central_difference_y(self, f: np.ndarray) -> np.ndarray:
+    def first_diff_y_central_difference(self, f: np.ndarray) -> np.ndarray:
         difference_grid_y: np.ndarray = self.grid_zeros()
         dy: float = self.cell_y_length
 
@@ -144,12 +144,35 @@ class Grid:
         difference_grid_y[-2,:] = (f[-1,:] - f[-3,:]) / (2 * dy) # second to last row, all columns
 
         return difference_grid_y
- 
+    
+    def second_diff_x_central_difference(self, f: np.ndarray) -> np.ndarray:
+        """
+        f''(x) ~~ (-f(x-2h) + 16f(x-h) - 30f(x) + 16f(x+h) - f(x+2h)) / (12h²) : 4th order 
+        """
+        difference_grid_x: np.ndarray = self.grid_zeros()
+        dx_squared: float = self.cell_x_length ** 2
+
+        difference_grid_x[:,2:-2] = (-f[:,:-4] + 16*f[:,1:-3] - 30*f[:,2:-2] + 16*f[:,3:-1] - f[:,4:]) / (12 * dx_squared) # all rows, third column to third to last column
+        difference_grid_x[:,1] = (f[:,0] - 2*f[:,1] + f[:,2]) / dx_squared # all rows, second column
+        difference_grid_x[:,-2] = (f[:,-3] - 2*f[:,-2] + f[:,-1]) / dx_squared # all rows, second to last column
+
+        return difference_grid_x
+
+    def second_diff_y_central_difference(self, f: np.ndarray) -> np.ndarray:
+        difference_grid_y: np.ndarray = self.grid_zeros()
+        dy_squared: float = self.cell_y_length ** 2
+
+        difference_grid_y[2:-2,:] = (-f[:-4,:] + 16*f[1:-3,:] - 30*f[2:-2,:] + 16*f[3:-1,:] - f[4:,:]) / (12 * dy_squared) # third row to third to last row, all columns
+        difference_grid_y[1,:] = (f[0,:] - 2*f[1,:] + f[2,:]) / dy_squared # second row, all columns
+        difference_grid_y[-2,:] = (f[-3,:] - 2*f[-2,:] + f[-1,:]) / dy_squared # second to last row, all columns
+
+        return difference_grid_y
+
     def gradient(self, f: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Points in direction of greatest change of function, describing pressure forces on fluid
         """
-        return self.central_difference_x(f), self.central_difference_y(f)
+        return self.first_diff_x_central_difference(f), self.first_diff_y_central_difference(f)
 
     def divergence(self, u: np.ndarray, v: np.ndarray) -> np.ndarray:
         """
@@ -157,14 +180,14 @@ class Grid:
         In our case, we want incompressible flow, so the divergence should be 0 everywhere
         ∇·F = ∂u/∂x + ∂v/∂y
         """
-        return self.central_difference_x(u) + self.central_difference_y(v) 
+        return self.first_diff_x_central_difference(u) + self.first_diff_y_central_difference(v)
 
     def laplacian(self, u: np.ndarray) -> np.ndarray:
         """
         How much a value differs from its neighbours on average, describing momentum diffusion in our fluid
         ∇^2u = ∂^2u/∂x^2 + ∂^2u/∂y^2
         """
-        return self.central_difference_x(self.central_difference_x(u)) + self.central_difference_y(self.central_difference_y(u))
+        return self.second_diff_x_central_difference(u) + self.second_diff_y_central_difference(u)
 
 
 
