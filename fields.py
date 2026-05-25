@@ -35,11 +35,27 @@ class Fields():
         """
         return np.arctan(self.resultant_velocity(self.x, self.y)) 
 
+    def convert_to_degrees(self) -> np.ndarray:
+        """
+        Convert each angle in resultant velocity field from radians to degrees, where:
+            degrees = radians * (180/π)
+        """
+        return self.resultant_angle() * (180 / np.pi)
+
+    def fill_in_fields(self):
+        self.x.flat[:] = np.random.rand(self.x.size)
+        self.y.flat[:] = np.random.rand(self.y.size)
+        self.p.flat[:] = np.random.rand(self.p.size)
+
     def __repr__(self) -> str:
-        #return f"Fields: \nx=\n{self.x}, \ny=\n{self.y}, \np=\n{self.p}"
-        return f"Resultant Field: \n{self.resultant_velocity(self.x, self.y)}\n Resultant Angle: \n {self.resultant_angle()}"
-    
+        return f"Fields: \n\nx=\n\t{self.x}, \n\ny=\n\t{self.y}, \n\np=\n\t{self.p} + \
+        \n\nResultant Velocity:\n\t{self.resultant_velocity(self.x, self.y)} + \
+        \n\nResultant Angle (radians):\n\t{self.resultant_angle()} + \
+        \n\nResultant Angle (degrees):\n\t{self.convert_to_degrees()}"
+
+
 if __name__ == "__main__":
     grid = Grid(100,100,1.0,1.0)
     fields = Fields(grid)
+    fields.fill_in_fields()
     print(fields)
