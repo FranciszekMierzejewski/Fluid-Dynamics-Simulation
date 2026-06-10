@@ -1,18 +1,19 @@
 # Given a randomnly generated velocity field, we compute our divergence at each cell, solve for pressure and project velocity field to be divergence-free, hence allowing for incompressible flow.
 
 import numpy as np
+from typing import Optional
 from grid import Grid
 from fields import Fields
 
 class PressureProjection():
-    def __init__(self, fields: Fields, omega, tolerance: float = 1e-6, max_iterations: int = 10000):
+    def __init__(self, fields: Fields, omega: Optional[float] = None, tolerance: float = 1e-6, max_iterations: int = 10000):
         self.fields = fields
         self.grid = fields.grid
         self.tolerance = tolerance
         self.max_iterations = max_iterations
 
         max_mean: float = 1/2 * (np.cos(np.pi/self.grid.number_of_rows) + np.cos(np.pi/self.grid.number_of_columns))
-        self.omega: float = 2/(1 + (1 - max_mean)** 0.5)
+        self.omega = (omega, 2/(1 + (1 - max_mean)** 0.5))[omega is None]
 
 
     def _calculate_divergence(self) -> np.ndarray:
@@ -45,12 +46,22 @@ class PressureProjection():
                       (1 - self.omega) * p[i, j]
                     )
 
-            residual = np.linalg.norm(p - p_old)/np.linalg.norm(p)
+            # Update boundary conditions with interior
+            p[0, :]  = p[1, :]
+            p[-1, :] = p[-2, :]
+            p[:, 0]  = p[:, 1]
+            p[:, -1] = p[:, -2]
+
+            # Pressure reference
+            p[0, 0] = 0.0
+
+            residual = np.linalg.norm(p - p_old)/(np.linalg.norm(p) + 1e-16)
             
             if residual < self.tolerance:
                 print(f"Successive over relaxation with weight {self.omega:.4f} has converged in {iteration + 1} iterations with residual {residual:.2e}")
                 break
-        print(f"Reached maximum iterations {self.max_iterations}, failed to converge")
+        else:
+            print(f"Reached maximum iterations {self.max_iterations}, failed to converge")
             
         return p
 
